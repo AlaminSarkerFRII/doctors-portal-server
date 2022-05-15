@@ -2,6 +2,7 @@ const express = require("express");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 require("dotenv").config();
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 // const { query } = require("express");
 const app = express();
 const port = process.env.PORT || 5000;
@@ -28,6 +29,8 @@ async function run() {
   const serviceCollection = client.db("doctors_portal").collection("services");
   // bookings data stored
   const bookingCollection = client.db("doctors_portal").collection("bookings");
+  // set user in db
+  const userCollection = client.db("doctors_portal").collection("users");
 
   console.log("Database connected");
 
@@ -40,8 +43,25 @@ async function run() {
     res.send(services);
   });
 
-  // this is not a proper way to query
+  // update or insert with put method set use in database
+  app.put("/user/:email", async (req, res) => {
+    const email = req.params.email;
+    const user = req.body;
+    const authorization = req.headers.authorization;
+    console.log(authorization);
+    const filter = { email: email };
+    const options = { upsert: true };
+    const updateDoc = {
+      $set: user,
+    };
+    const result = await userCollection.updateOne(filter, updateDoc, options);
+    const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, {
+      expiresIn: "1h",
+    });
+    res.send({ result, token });
+  });
 
+  // this is not a proper way to query
   //set booking date
 
   app.get("/available", async (req, res) => {
