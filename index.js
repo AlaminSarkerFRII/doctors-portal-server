@@ -61,7 +61,43 @@ async function run() {
     res.send(services);
   });
 
+  //get user from database
+
+  app.get("/user", verifyJWT, async (req, res) => {
+    const users = await userCollection.find().toArray();
+    res.send(users);
+  });
+
+  // check if user admin or not
+
+  app.get("/admin/:email", async (req, res) => {
+    const email = req.params.email;
+    const user = await userCollection.findOne({ email: email });
+    const isAdmin = user.role === "admin";
+    res.send({ admin: isAdmin });
+  });
+
+  // make user as admin
+
+  app.put("/user/admin/:email", verifyJWT, async (req, res) => {
+    const email = req.params.email;
+    const requester = req.decoded.email;
+    const requesterAccount = await userCollection.findOne({ email: requester });
+    // jodi user admin hoy than he can create an admin others user
+    if (requesterAccount.role === "admin") {
+      const filter = { email: email };
+      const updateDoc = {
+        $set: { role: "admin" },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    } else {
+      res.status(403).send({ message: "Forbidden" });
+    }
+  });
+
   // update or insert with put method set use in database
+
   app.put("/user/:email", async (req, res) => {
     const email = req.params.email;
     const user = req.body;
