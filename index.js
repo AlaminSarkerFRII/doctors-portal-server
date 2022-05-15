@@ -21,8 +21,26 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
-// run function
+// jwt token verify & send to user verification
 
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: "Unauthorized Access" });
+  }
+  const token = authHeader.split(" ")[1];
+  // verify a token symmetric
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+    if (err) {
+      return res.status(403).send({ message: "Forbidden access" });
+    }
+    req.decoded = decoded;
+    // call to next for forward
+    next();
+  });
+}
+
+// run function
 async function run() {
   await client.connect();
   // services
@@ -47,8 +65,6 @@ async function run() {
   app.put("/user/:email", async (req, res) => {
     const email = req.params.email;
     const user = req.body;
-    const authorization = req.headers.authorization;
-    console.log(authorization);
     const filter = { email: email };
     const options = { upsert: true };
     const updateDoc = {
@@ -105,11 +121,20 @@ async function run() {
 
   // get  data from  user dashboard
 
-  app.get("/booking", async (req, res) => {
+  app.get("/booking", verifyJWT, async (req, res) => {
     const patient = req.query.patient;
-    const query = { patient: patient };
-    const bookings = await bookingCollection.find(query).toArray();
-    res.send(bookings);
+    // check my token with others accounts
+    const decodedEmail = req.decoded.email;
+    if (patient === decodedEmail) {
+      const query = { patient: patient };
+      const bookings = await bookingCollection.find(query).toArray();
+      return res.send(bookings);
+    } else {
+      return res.status(403).send({ message: "forbidden access" });
+    }
+    // const query = { patient: patient };
+    // const bookings = await bookingCollection.find(query).toArray();
+    // res.send(bookings);
     // console.log(bookings);
   });
 
