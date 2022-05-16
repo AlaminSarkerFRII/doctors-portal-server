@@ -147,7 +147,7 @@ async function run() {
     res.send(services);
   });
 
-  // post/ set booking data on database ..
+  // post/ set booking data on database .. Rules
   //API Naming Convention
   // app.get('/booking') / get all collection
   // app.get('/booking/:id') / get all collection
@@ -168,10 +168,6 @@ async function run() {
     } else {
       return res.status(403).send({ message: "forbidden access" });
     }
-    // const query = { patient: patient };
-    // const bookings = await bookingCollection.find(query).toArray();
-    // res.send(bookings);
-    // console.log(bookings);
   });
 
   app.post("/booking", async (req, res) => {
