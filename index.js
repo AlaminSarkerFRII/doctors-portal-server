@@ -53,6 +53,19 @@ async function run() {
 
   console.log("Database connected");
 
+  // verifyAdmin with JWT
+
+  const verifyAdmin = async (req, res, next) => {
+    const requester = req.decoded.email;
+    const requesterAccount = await userCollection.findOne({ email: requester });
+    // jodi user admin hoy than he can create an admin others user
+    if (requesterAccount.role === "admin") {
+      next();
+    } else {
+      res.status(403).send({ message: "Forbidden" });
+    }
+  };
+
   // create api and get service data
 
   app.get("/service", async (req, res) => {
@@ -80,21 +93,14 @@ async function run() {
 
   // make user as admin
 
-  app.put("/user/admin/:email", verifyJWT, async (req, res) => {
+  app.put("/user/admin/:email", verifyJWT, verifyAdmin, async (req, res) => {
     const email = req.params.email;
-    const requester = req.decoded.email;
-    const requesterAccount = await userCollection.findOne({ email: requester });
-    // jodi user admin hoy than he can create an admin others user
-    if (requesterAccount.role === "admin") {
-      const filter = { email: email };
-      const updateDoc = {
-        $set: { role: "admin" },
-      };
-      const result = await userCollection.updateOne(filter, updateDoc);
-      res.send(result);
-    } else {
-      res.status(403).send({ message: "Forbidden" });
-    }
+    const filter = { email: email };
+    const updateDoc = {
+      $set: { role: "admin" },
+    };
+    const result = await userCollection.updateOne(filter, updateDoc);
+    res.send(result);
   });
 
   // update or insert with put method set use in database
@@ -186,12 +192,28 @@ async function run() {
     return res.send({ success: true, result });
   });
 
-  // doctors  insertion in database
+  // doctors  insertion in database and verify with jWT
 
-  app.post("/doctor", async (req, res) => {
+  app.post("/doctor", verifyJWT, verifyAdmin, async (req, res) => {
     const doctor = req.body;
     const result = await doctorCollection.insertOne(doctor);
     res.send(result);
+  });
+
+  // delete doctors from Db and Ui
+
+  app.delete("/doctor/:email", verifyJWT, verifyAdmin, async (req, res) => {
+    const email = req.params.email;
+    const filter = { email: email };
+    const result = await doctorCollection.deleteOne(filter);
+    res.send(result);
+  });
+
+  // get all doctors in client side showing
+
+  app.get("/doctor", verifyJWT, verifyAdmin, async (req, res) => {
+    const doctors = await doctorCollection.find().toArray();
+    res.send(doctors);
   });
 
   try {
