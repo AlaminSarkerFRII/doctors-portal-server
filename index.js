@@ -120,7 +120,7 @@ async function run() {
     res.send({ result, token });
   });
 
-  // this is not a proper way to query
+  // this is not a proper way to query .. you should change
   //set booking date
 
   app.get("/available", async (req, res) => {
