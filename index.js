@@ -1,5 +1,5 @@
 const express = require("express");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
@@ -163,7 +163,6 @@ async function run() {
   //app.delete("/booking/:id") delete
 
   // get  data from  user dashboard
-
   app.get("/booking", verifyJWT, async (req, res) => {
     const patient = req.query.patient;
     // check my token with others accounts
@@ -176,6 +175,17 @@ async function run() {
       return res.status(403).send({ message: "forbidden access" });
     }
   });
+
+  // find  a specific booking by id
+
+  app.get("/booking/:id", verifyJWT, async (req, res) => {
+    const id = req.params.id;
+    const query = { _id: ObjectId(id) };
+    const booking = await bookingCollection.findOne(query);
+    res.send(booking);
+  });
+
+  // post booking in database
 
   app.post("/booking", async (req, res) => {
     const booking = req.body;
@@ -193,7 +203,6 @@ async function run() {
   });
 
   // doctors  insertion in database and verify with jWT
-
   app.post("/doctor", verifyJWT, verifyAdmin, async (req, res) => {
     const doctor = req.body;
     const result = await doctorCollection.insertOne(doctor);
