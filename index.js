@@ -154,7 +154,7 @@ async function run() {
     res.send(services);
   });
 
-  // post/ set booking data on database .. Rules
+  // post/ set booking data on database .steps
   //API Naming Convention
   // app.get('/booking') / get all collection
   // app.get('/booking/:id') / get all collection
